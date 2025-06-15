@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #111827;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  body {
+    @apply m-0 min-h-screen bg-gray-900 text-gray-100;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight text-white;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-5 py-2.5 rounded-2xl font-semibold text-sm
+           transition-all duration-200 ease-in-out
+           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900
+           active:scale-95 transform;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-b from-blue-500 to-blue-600
+           text-white shadow-lg shadow-blue-500/20
+           hover:from-blue-600 hover:to-blue-700
+           focus:ring-blue-500/50
+           border border-blue-400/20;
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-b from-gray-600 to-gray-700
+           text-white shadow-lg shadow-gray-500/20
+           hover:from-gray-500 hover:to-gray-600
+           focus:ring-gray-500/50
+           border border-gray-500/20;
+  }
+
+  .btn-success {
+    @apply bg-gradient-to-b from-green-500 to-green-600
+           text-white shadow-lg shadow-green-500/20
+           hover:from-green-600 hover:to-green-700
+           focus:ring-green-500/50
+           border border-green-400/20;
+  }
+
+  .card {
+    @apply bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-700/50
+           transition-all duration-300 hover:shadow-xl;
+  }
+
+  .input {
+    @apply w-full px-4 py-2.5 rounded-2xl border border-gray-600
+           bg-gray-700 text-white placeholder-gray-400
+           focus:outline-none focus:ring-2 focus:ring-blue-500/50 
+           focus:border-transparent transition-all duration-200;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 rounded-full hover:bg-gray-500;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
