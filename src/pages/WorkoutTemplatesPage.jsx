@@ -18,6 +18,7 @@ export default function WorkoutTemplatesPage() {
     const navigate = useNavigate();
 
     const [showBuilderModal, setShowBuilderModal] = useState(false);
+    const [showExerciseManagerModal, setShowExerciseManagerModal] = useState(false);
     const [activeSessionTemplateId, setActiveSessionTemplateId] = useState(null);
     const [showHistory, setShowHistory] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -32,9 +33,18 @@ export default function WorkoutTemplatesPage() {
     const openBuilderModal = () => {
         setShowHistory(false);
         setShowSettings(false);
+        setShowExerciseManagerModal(false);
         setShowBuilderModal(true);
     };
     const closeBuilderModal = () => setShowBuilderModal(false);
+
+    const openExerciseManagerModal = () => {
+        setShowHistory(false);
+        setShowSettings(false);
+        setShowBuilderModal(false);
+        setShowExerciseManagerModal(true);
+    };
+    const closeExerciseManagerModal = () => setShowExerciseManagerModal(false);
 
     const startSession = (templateId) => {
         setShowHistory(false);
@@ -87,7 +97,7 @@ export default function WorkoutTemplatesPage() {
     }
 
     return (
-        <div className="bg-transparent w-full">
+        <div className="bg-transparent w-full p-4 md:p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <h2 className="text-2xl font-bold text-white">Your Workout Templates</h2>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -108,6 +118,12 @@ export default function WorkoutTemplatesPage() {
                         onClick={handleViewSettings}
                     >
                         Settings
+                    </button>
+                    <button
+                        className="btn btn-info w-full sm:w-auto"
+                        onClick={openExerciseManagerModal}
+                    >
+                        Manage Exercises
                     </button>
                 </div>
             </div>
@@ -164,6 +180,20 @@ export default function WorkoutTemplatesPage() {
                             &times;
                         </button>
                         <WorkoutBuilder onClose={closeBuilderModal} />
+                    </div>
+                </div>
+            )}
+
+            {showExerciseManagerModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
+                    <div className="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl border border-gray-700/50">
+                        <button
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-2xl transition-colors"
+                            onClick={closeExerciseManagerModal}
+                        >
+                            &times;
+                        </button>
+                        <ExerciseManager />
                     </div>
                 </div>
             )}
