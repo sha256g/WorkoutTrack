@@ -1,6 +1,6 @@
 {
   "name": "FitNotes PWA",
-  "short_name": "slutificator",
+  "short_name": "sluttifier",
   "description": "Your personal workout tracker, inspired by your awesomeness",
   "start_url": "./",
   "display": "standalone",
