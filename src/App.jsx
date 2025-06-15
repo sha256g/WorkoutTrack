@@ -2,6 +2,7 @@ import './App.css';
 import React from 'react';
 import WorkoutTemplatesPage from './pages/WorkoutTemplatesPage.jsx';
 
+// CONFIRM CHANGE: App component updated for layout and PWA icon
 function App() {
     return (
         <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">

@@ -85,18 +85,18 @@ export default function WorkoutTemplatesPage() {
     }
 
     return (
-        <div className="relative min-h-screen bg-gray-900">
-            <div className="flex justify-between items-center mb-6 p-4">
-                <h2 className="text-2xl font-bold text-white">Your Workout Templates</h2>
-                <div className="flex gap-3">
+        <div className="relative min-h-screen bg-gray-900 px-4 py-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <h2 className="text-2xl font-bold text-white mb-3 sm:mb-0">Your Workout Templates</h2>
+                <div className="flex flex-wrap gap-3">
                     <button
-                        className="btn btn-primary"
+                        className="btn btn-primary w-full sm:w-auto"
                         onClick={handleViewHistory}
                     >
                         View History
                     </button>
                     <button
-                        className="btn btn-secondary"
+                        className="btn btn-secondary w-full sm:w-auto"
                         onClick={handleViewSettings}
                     >
                         Settings
@@ -104,41 +104,39 @@ export default function WorkoutTemplatesPage() {
                 </div>
             </div>
 
-            <div className="px-4">
-                {workoutTemplates.length === 0 ? (
-                    <p className="text-gray-400">No workout templates created yet. Click the '+' button to build one!</p>
-                ) : (
-                    <ul className="space-y-4">
-                        {workoutTemplates.map((template) => (
-                            <li key={template.id} className="bg-gray-800 p-5 rounded-2xl shadow-lg flex justify-between items-center hover:bg-gray-750 transition-colors border border-gray-700/50">
-                                <div className="flex-grow">
-                                    <h3 className="text-xl font-semibold text-indigo-400">{template.name}</h3>
-                                    <p className="text-sm text-gray-400">
-                                        {template.exercises.length} exercises planned
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        className="btn btn-success"
-                                        onClick={() => startSession(template.id)}
-                                    >
-                                        Start Workout
-                                    </button>
-                                    <button
-                                        className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-gray-900"
-                                        onClick={() => handleDeleteTemplate(template.id, template.name)}
-                                        aria-label={`Delete ${template.name}`}
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm6 3a1 1 0 100 2h-2a1 1 0 100 2h2a1 1 0 100 2H8a1 1 0 01-1-1v-4a1 1 0 011-1h5z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
+            {workoutTemplates.length === 0 ? (
+                <p className="text-gray-400 text-center py-10">No workout templates created yet. Click the '+' button to build one!</p>
+            ) : (
+                <ul className="space-y-4">
+                    {workoutTemplates.map((template) => (
+                        <li key={template.id} className="bg-gray-800 p-4 rounded-2xl shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-gray-750 transition-colors border border-gray-700/50">
+                            <div className="flex-grow mb-3 sm:mb-0">
+                                <h3 className="text-xl font-semibold text-indigo-400">{template.name}</h3>
+                                <p className="text-sm text-gray-400">
+                                    {template.exercises.length} exercises planned
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <button
+                                    className="btn btn-success flex-grow sm:flex-grow-0"
+                                    onClick={() => startSession(template.id)}
+                                >
+                                    Start Workout
+                                </button>
+                                <button
+                                    className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-gray-900 flex-shrink-0"
+                                    onClick={() => handleDeleteTemplate(template.id, template.name)}
+                                    aria-label={`Delete ${template.name}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm6 3a1 1 0 100 2h-2a1 1 0 100 2h2a1 1 0 100 2H8a1 1 0 01-1-1v-4a1 1 0 011-1h5z" clipRule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            )}
 
             {/* Floating Action Button */}
             <button
