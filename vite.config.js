@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      base: '/WorkoutTrack/', // Explicitly set base for PWA plugin
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
@@ -20,7 +21,7 @@ export default defineConfig({
       },
       manifest: {
         name: "FitNotes PWA",
-        short_name: "slutificator",
+        short_name: "FitNotes", // Changed for clarity
         description: "Your personal workout tracker, inspired by your awesomeness.",
         theme_color: "#4f46e5",
         icons: [
