@@ -17,7 +17,7 @@ function App() {
                 </div>
             </header>
             <main className="container mx-auto px-4 py-8 max-w-full lg:max-w-7xl">
-                <div className="bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 transition-all duration-300 hover:shadow-xl">
+                <div>
                     <WorkoutTemplatesPage />
                 </div>
             </main>

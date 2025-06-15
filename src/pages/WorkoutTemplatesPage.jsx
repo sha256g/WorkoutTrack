@@ -24,7 +24,7 @@ export default function WorkoutTemplatesPage() {
 
     useEffect(() => {
         initExercises();
-        initWorkoutTemplates(); // This already populates workoutTemplates in useStore
+        initWorkoutTemplates();
         initWorkoutHistory();
         initSettings();
     }, [initExercises, initWorkoutTemplates, initWorkoutHistory, initSettings]);
@@ -65,14 +65,6 @@ export default function WorkoutTemplatesPage() {
         }
     };
 
-    const handleCreateTemplate = () => {
-        navigate('/templates/create');
-    };
-
-    const handleEditTemplate = (templateId) => {
-        navigate(`/templates/edit/${templateId}`);
-    };
-
     if (activeSessionTemplateId) {
         return (
             <WorkoutSessionLogger
@@ -94,12 +86,17 @@ export default function WorkoutTemplatesPage() {
         );
     }
 
-    // No longer need loading/error states here, as useStore handles data fetching
     return (
-        <div className="space-y-8 p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="bg-transparent w-full">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <h2 className="text-2xl font-bold text-white">Your Workout Templates</h2>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <button
+                        className="btn btn-success w-full sm:w-auto"
+                        onClick={openBuilderModal}
+                    >
+                        Create New Template
+                    </button>
                     <button
                         className="btn btn-primary w-full sm:w-auto"
                         onClick={handleViewHistory}
@@ -120,7 +117,7 @@ export default function WorkoutTemplatesPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {workoutTemplates.map((template) => (
-                        <div key={template.id} className="bg-gray-800 p-5 rounded-xl shadow-lg">
+                        <div key={template.id} className="bg-gray-900 p-5 rounded-xl shadow-halo">
                             <div className="mb-5">
                                 <h3 className="text-xl font-semibold text-indigo-400">{template.name}</h3>
                                 <p className="text-sm text-gray-400 mt-1">
@@ -158,7 +155,17 @@ export default function WorkoutTemplatesPage() {
             </button>
 
             {showBuilderModal && (
-                <WorkoutBuilder onClose={closeBuilderModal} />
+                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
+                    <div className="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl border border-gray-700/50">
+                        <button
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-2xl transition-colors"
+                            onClick={closeBuilderModal}
+                        >
+                            &times;
+                        </button>
+                        <WorkoutBuilder onClose={closeBuilderModal} />
+                    </div>
+                </div>
             )}
         </div>
     );

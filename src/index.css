@@ -8,7 +8,6 @@
   font-weight: 400;
   color-scheme: dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #111827;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -17,7 +16,7 @@
 
 @layer base {
   body {
-    @apply m-0 min-h-screen bg-gray-900 text-gray-100;
+    @apply m-0 min-h-screen text-gray-100;
   }
 
   h1, h2, h3, h4, h5, h6 {
