@@ -21,29 +21,12 @@ export default function WorkoutTemplatesPage() {
     const [activeSessionTemplateId, setActiveSessionTemplateId] = useState(null);
     const [showHistory, setShowHistory] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
-    const [templates, setTemplates] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
     useEffect(() => {
         initExercises();
-        initWorkoutTemplates();
+        initWorkoutTemplates(); // This already populates workoutTemplates in useStore
         initWorkoutHistory();
         initSettings();
-
-        const loadTemplates = async () => {
-            try {
-                const templateStore = useTemplateStore.getState();
-                const loadedTemplates = await templateStore.getTemplates();
-                setTemplates(loadedTemplates);
-                setLoading(false);
-            } catch (err) {
-                setError(err.message);
-                setLoading(false);
-            }
-        };
-
-        loadTemplates();
     }, [initExercises, initWorkoutTemplates, initWorkoutHistory, initSettings]);
 
     const openBuilderModal = () => {
@@ -111,9 +94,7 @@ export default function WorkoutTemplatesPage() {
         );
     }
 
-    if (loading) return <div className="text-center p-4">Loading...</div>;
-    if (error) return <div className="text-center p-4 text-red-500">{error}</div>;
-
+    // No longer need loading/error states here, as useStore handles data fetching
     return (
         <div className="space-y-8 p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
