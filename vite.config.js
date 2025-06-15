@@ -3,6 +3,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa' // Import the plugin
 
+// Added a comment to force redeployment
+
 // https://vitejs.dev/config/
 export default defineConfig({
   base: '/WorkoutTrack/', // Set the base URL for GitHub Pages
