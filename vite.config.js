@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa' // Import the plugin
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/WorkoutTrack/', // Set the base URL for GitHub Pages
   plugins: [
     react(),
     VitePWA({
