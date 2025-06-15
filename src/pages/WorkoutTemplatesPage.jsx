@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore.js';
 import WorkoutBuilder from '../components/WorkoutBuilder.jsx';
 import ExerciseManager from '../components/ExerciseManager.jsx';
 import WorkoutSessionLogger from './WorkoutSessionLogger.jsx';
 import WorkoutHistoryPage from './WorkoutHistoryPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
+import { useNavigate } from 'react-router-dom';
 
 // Main workout templates page component
 export default function WorkoutTemplatesPage() {
@@ -14,17 +15,35 @@ export default function WorkoutTemplatesPage() {
     const initWorkoutHistory = useStore((state) => state.initWorkoutHistory);
     const initSettings = useStore((state) => state.initSettings);
     const removeWorkoutTemplate = useStore((state) => state.removeWorkoutTemplate);
+    const navigate = useNavigate();
 
     const [showBuilderModal, setShowBuilderModal] = useState(false);
     const [activeSessionTemplateId, setActiveSessionTemplateId] = useState(null);
     const [showHistory, setShowHistory] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [templates, setTemplates] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         initExercises();
         initWorkoutTemplates();
         initWorkoutHistory();
         initSettings();
+
+        const loadTemplates = async () => {
+            try {
+                const templateStore = useTemplateStore.getState();
+                const loadedTemplates = await templateStore.getTemplates();
+                setTemplates(loadedTemplates);
+                setLoading(false);
+            } catch (err) {
+                setError(err.message);
+                setLoading(false);
+            }
+        };
+
+        loadTemplates();
     }, [initExercises, initWorkoutTemplates, initWorkoutHistory, initSettings]);
 
     const openBuilderModal = () => {
@@ -63,6 +82,14 @@ export default function WorkoutTemplatesPage() {
         }
     };
 
+    const handleCreateTemplate = () => {
+        navigate('/templates/create');
+    };
+
+    const handleEditTemplate = (templateId) => {
+        navigate(`/templates/edit/${templateId}`);
+    };
+
     if (activeSessionTemplateId) {
         return (
             <WorkoutSessionLogger
@@ -84,11 +111,14 @@ export default function WorkoutTemplatesPage() {
         );
     }
 
+    if (loading) return <div className="text-center p-4">Loading...</div>;
+    if (error) return <div className="text-center p-4 text-red-500">{error}</div>;
+
     return (
-        <div className="relative min-h-screen bg-gray-900 px-4 py-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-                <h2 className="text-2xl font-bold text-white mb-3 sm:mb-0">Your Workout Templates</h2>
-                <div className="flex flex-wrap gap-3">
+        <div className="space-y-8 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-2xl font-bold text-white">Your Workout Templates</h2>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <button
                         className="btn btn-primary w-full sm:w-auto"
                         onClick={handleViewHistory}
@@ -107,61 +137,47 @@ export default function WorkoutTemplatesPage() {
             {workoutTemplates.length === 0 ? (
                 <p className="text-gray-400 text-center py-10">No workout templates created yet. Click the '+' button to build one!</p>
             ) : (
-                <ul className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {workoutTemplates.map((template) => (
-                        <li key={template.id} className="bg-gray-800 p-4 rounded-2xl shadow-lg flex flex-col sm:flex-row justify-between items-start sm:items-center hover:bg-gray-750 transition-colors border border-gray-700/50">
-                            <div className="flex-grow mb-3 sm:mb-0">
+                        <div key={template.id} className="bg-gray-800 p-5 rounded-xl shadow-lg">
+                            <div className="mb-5">
                                 <h3 className="text-xl font-semibold text-indigo-400">{template.name}</h3>
-                                <p className="text-sm text-gray-400">
+                                <p className="text-sm text-gray-400 mt-1">
                                     {template.exercises.length} exercises planned
                                 </p>
                             </div>
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <button
-                                    className="btn btn-success flex-grow sm:flex-grow-0"
+                                    className="btn btn-success w-full sm:w-auto"
                                     onClick={() => startSession(template.id)}
                                 >
                                     Start Workout
                                 </button>
                                 <button
-                                    className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 focus:ring-offset-gray-900 flex-shrink-0"
+                                    className="btn btn-danger w-full sm:w-auto"
                                     onClick={() => handleDeleteTemplate(template.id, template.name)}
-                                    aria-label={`Delete ${template.name}`}
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm6 3a1 1 0 100 2h-2a1 1 0 100 2h2a1 1 0 100 2H8a1 1 0 01-1-1v-4a1 1 0 011-1h5z" clipRule="evenodd" />
-                                    </svg>
+                                    Delete
                                 </button>
                             </div>
-                        </li>
+                        </div>
                     ))}
-                </ul>
+                </div>
             )}
 
             {/* Floating Action Button */}
             <button
-                className="fixed bottom-6 right-6 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-2xl w-14 h-14 rounded-full shadow-lg flex items-center justify-center z-40 transition-all duration-200 border border-blue-400/20 hover:shadow-blue-500/25 active:scale-95"
                 onClick={openBuilderModal}
+                className="fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:ring-offset-2 focus:ring-offset-gray-900"
+                aria-label="Create new workout template"
             >
-                +
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
             </button>
 
-            {/* Modal */}
             {showBuilderModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
-                    <div className="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl border border-gray-700/50">
-                        <button
-                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-2xl transition-colors"
-                            onClick={closeBuilderModal}
-                        >
-                            &times;
-                        </button>
-                        <WorkoutBuilder />
-                        <div className="mt-6 pt-4 border-t border-gray-700">
-                            <ExerciseManager />
-                        </div>
-                    </div>
-                </div>
+                <WorkoutBuilder onClose={closeBuilderModal} />
             )}
         </div>
     );
