@@ -5,7 +5,6 @@ import ExerciseManager from '../components/ExerciseManager.jsx';
 import WorkoutSessionLogger from './WorkoutSessionLogger.jsx';
 import WorkoutHistoryPage from './WorkoutHistoryPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
-import { useNavigate } from 'react-router-dom';
 
 // Main workout templates page component
 export default function WorkoutTemplatesPage() {
@@ -15,7 +14,6 @@ export default function WorkoutTemplatesPage() {
     const initWorkoutHistory = useStore((state) => state.initWorkoutHistory);
     const initSettings = useStore((state) => state.initSettings);
     const removeWorkoutTemplate = useStore((state) => state.removeWorkoutTemplate);
-    const navigate = useNavigate();
 
     const [showBuilderModal, setShowBuilderModal] = useState(false);
     const [showExerciseManagerModal, setShowExerciseManagerModal] = useState(false);

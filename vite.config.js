@@ -11,43 +11,23 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      base: '/WorkoutTrack/', // Explicitly set base for PWA plugin
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}'],
-        // Add more advanced caching strategies if needed
-      },
-      devOptions: {
-        enabled: true // Set to false for production
-      },
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: "FitNotes PWA",
-        short_name: "FitNotes", // Changed for clarity
-        description: "Your personal workout tracker, inspired by your awesomeness.",
-        theme_color: "#4f46e5",
+        name: 'FitNotes',
+        short_name: 'FitNotes',
+        description: 'Track your fitness journey',
+        theme_color: '#ffffff',
         icons: [
           {
-            src: "icons/icon-192x192.png",
-            sizes: "192x192",
-            type: "image/png"
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
           },
           {
-            src: "icons/icon-512x512.png",
-            sizes: "512x512",
-            type: "image/png"
-          },
-          {
-            src: "icons/icon-maskable-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-            purpose: "maskable"
-          },
-          {
-            src: "icons/icon-maskable-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "maskable"
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
           }
         ]
       }
