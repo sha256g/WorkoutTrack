@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import ExerciseManager from "./ExerciseManager.jsx"; // Ensure this is imported
 
-export default function WorkoutBuilder() {
+export default function WorkoutBuilder({ user }) {
     const [templateName, setTemplateName] = useState('');
     const [selectedExercises, setSelectedExercises] = useState([]); // [{exerciseId, name, plannedSets}]
     const [showExerciseManagerModal, setShowExerciseManagerModal] = useState(false);
@@ -54,7 +54,6 @@ export default function WorkoutBuilder() {
         const newTemplate = {
             id: Date.now(), // Simple unique ID
             name: templateName,
-            // Date can be optional for templates, or set to creation date
             date: new Date().toISOString().slice(0, 10),
             exercises: selectedExercises.map((ex) => ({
                 exerciseId: ex.exerciseId,
@@ -62,7 +61,7 @@ export default function WorkoutBuilder() {
             })),
         };
 
-        await addWorkoutTemplate(newTemplate);
+        await addWorkoutTemplate(newTemplate, user?.uid);
         setTemplateName('');
         setSelectedExercises([]);
         alert('Workout template saved!');
@@ -156,7 +155,7 @@ export default function WorkoutBuilder() {
                         >
                             &times;
                         </button>
-                        <ExerciseManager />
+                        <ExerciseManager user = {user}/>
                     </div>
                 </div>
             )}

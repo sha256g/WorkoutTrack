@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { EXERCISE_CATEGORIES } from '../utils/exerciseCategories';
 
-export default function ExerciseManager() {
+export default function ExerciseManager({ user }) {
+    console.log('ExerciseManager user:', user);
     const [name, setName] = useState('');
     const [category, setCategory] = useState(EXERCISE_CATEGORIES[0]);
     const exercises = useStore((state) => state.exercises);
@@ -18,10 +19,10 @@ export default function ExerciseManager() {
         e.preventDefault();
         if (!name) return;
         await addExercise({
-            id: Date.now(), // simple unique id for demo
+            id: Date.now(),
             name,
             category,
-        });
+        }, user?.uid);
         setName('');
     };
 

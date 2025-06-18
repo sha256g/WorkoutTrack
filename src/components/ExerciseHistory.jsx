@@ -6,8 +6,11 @@ export default function ExerciseHistory({ exerciseId }) {
     const exercises = useStore((state) => state.exercises);
     const workoutHistory = useStore((state) => state.workoutHistory);
 
+    // Convert exerciseId to string for consistent comparison
+    const exerciseIdString = String(exerciseId);
+
     // Find the exercise details
-    const exercise = exercises.find(ex => ex.id === exerciseId);
+    const exercise = exercises.find(ex => String(ex.id) === exerciseIdString);
 
     if (!exercise) {
         return (
@@ -20,8 +23,14 @@ export default function ExerciseHistory({ exerciseId }) {
 
     // Filter workout sessions that contain this exercise
     const exerciseHistory = workoutHistory.filter(session => 
-        session.exercises.some(ex => ex.exerciseId === exerciseId)
-    );
+        session.exercises.some(ex => String(ex.exerciseId) === exerciseIdString)
+    ).sort((a, b) => {
+        // First, sort by date (descending)
+        const dateDiff = new Date(b.date) - new Date(a.date);
+        if (dateDiff !== 0) return dateDiff;
+        // If dates are equal, sort by id (descending)
+        return b.id - a.id;
+    });
 
     return (
         <div className="text-white">
@@ -48,7 +57,7 @@ export default function ExerciseHistory({ exerciseId }) {
                         </p>
                         
                         {exerciseHistory.map((session, sessionIndex) => {
-                            const exerciseData = session.exercises.find(ex => ex.exerciseId === exerciseId);
+                            const exerciseData = session.exercises.find(ex => String(ex.exerciseId) === exerciseIdString);
                             if (!exerciseData || exerciseData.loggedSets.length === 0) return null;
 
                             return (

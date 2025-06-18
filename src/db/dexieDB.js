@@ -108,4 +108,16 @@ export async function getSettingsFromDB() {
     return await db.settings.get(SETTINGS_ID);
 }
 
+// Clear all tables (for user switch)
+export async function clearAllTables() {
+    await Promise.all([
+        db.workoutTemplates.clear(),
+        db.exercises.clear(),
+        db.workoutSessions.clear(),
+        db.settings.clear(),
+        db.workouts?.clear?.(), // in case workouts table exists
+        db.sets?.clear?.(),     // in case sets table exists
+    ]);
+}
+
 export default db;

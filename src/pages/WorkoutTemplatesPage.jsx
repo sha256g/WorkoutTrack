@@ -7,7 +7,7 @@ import WorkoutHistoryPage from './WorkoutHistoryPage.jsx';
 import SettingsPage from './SettingsPage.jsx';
 
 // Main workout templates page component
-export default function WorkoutTemplatesPage() {
+export default function WorkoutTemplatesPage({ user }) {
     const workoutTemplates = useStore((state) => state.workoutTemplates);
     const initExercises = useStore((state) => state.initExercises);
     const initWorkoutTemplates = useStore((state) => state.initWorkoutTemplates);
@@ -177,7 +177,7 @@ export default function WorkoutTemplatesPage() {
                         >
                             &times;
                         </button>
-                        <WorkoutBuilder onClose={closeBuilderModal} />
+                        <WorkoutBuilder user={user} onClose={closeBuilderModal} />
                     </div>
                 </div>
             )}
@@ -191,7 +191,7 @@ export default function WorkoutTemplatesPage() {
                         >
                             &times;
                         </button>
-                        <ExerciseManager />
+                        <ExerciseManager user={user} />
                     </div>
                 </div>
             )}

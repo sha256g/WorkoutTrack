@@ -16,6 +16,9 @@ import {
     saveSettingsToDB,
     getSettingsFromDB,
 } from '../db/dexieDB';
+import { addExercise } from '../services/firestoreExercises';
+import { addTemplate } from '../services/firestoreTemplates';
+import { addWorkout } from '../services/firestoreWorkouts';
 
 const DEFAULT_REST_TIME_SECONDS = 60;
 
@@ -34,51 +37,57 @@ export const useStore = create((set, get) => ({
     },
 
     // --- Exercise Management ---
-    addExercise: async (exercise) => {
+    addExercise: async (exercise, uid) => {
         await addExerciseToDB(exercise);
+        if (uid) {
+            await addExercise(uid, exercise);
+        }
         const exercises = await getAllExercisesFromDB();
-        set({ exercises });
+        set({ exercises: Array.isArray(exercises) ? exercises : [] });
     },
     initExercises: async () => {
         const exercises = await getAllExercisesFromDB();
-        set({ exercises });
+        set({ exercises: Array.isArray(exercises) ? exercises : [] });
     },
     removeExercise: async (exerciseId) => {
         await deleteExerciseFromDB(exerciseId);
         set((state) => ({
-            exercises: state.exercises.filter((ex) => ex.id !== exerciseId),
+            exercises: Array.isArray(state.exercises) ? state.exercises.filter((ex) => ex.id !== exerciseId) : [],
         }));
     },
-    listExercises: () => get().exercises,
-    listExercisesByCategory: (category) =>
-        get().exercises.filter((ex) => ex.category === category),
+    listExercises: () => get().exercises || [],
+    listExercisesByCategory: (category) => {
+        const exercises = get().exercises;
+        return Array.isArray(exercises) ? exercises.filter((ex) => ex.category === category) : [];
+    },
 
     // --- Workout Template Management ---
-    addWorkoutTemplate: async (template) => {
+    addWorkoutTemplate: async (template, uid) => {
         await addWorkoutTemplateToDB(template);
+        if (uid) await addTemplate(uid, template);
         const workoutTemplates = await getAllWorkoutTemplatesFromDB();
-        set({ workoutTemplates });
+        set({ workoutTemplates: Array.isArray(workoutTemplates) ? workoutTemplates : [] });
     },
     initWorkoutTemplates: async () => {
         const workoutTemplates = await getAllWorkoutTemplatesFromDB();
-        set({ workoutTemplates });
+        set({ workoutTemplates: Array.isArray(workoutTemplates) ? workoutTemplates : [] });
     },
     removeWorkoutTemplate: async (templateId) => {
         await deleteWorkoutTemplateFromDB(templateId);
         await deleteWorkoutSessionsByTemplateId(templateId);
 
         set((state) => ({
-            workoutTemplates: state.workoutTemplates.filter((t) => t.id !== templateId),
+            workoutTemplates: Array.isArray(state.workoutTemplates) ? state.workoutTemplates.filter((t) => t.id !== templateId) : [],
             currentWorkoutSession: state.currentWorkoutSession?.templateId === templateId
                 ? null
                 : state.currentWorkoutSession,
-            workoutHistory: state.workoutHistory.filter((session) => session.templateId !== templateId),
+            workoutHistory: Array.isArray(state.workoutHistory) ? state.workoutHistory.filter((session) => session.templateId !== templateId) : [],
         }));
     },
 
     // --- Workout Session Management ---
     startWorkoutSession: async (templateId) => {
-        const template = get().workoutTemplates.find(t => t.id === templateId);
+        const template = Array.isArray(get().workoutTemplates) ? get().workoutTemplates.find(t => t.id === templateId) : null;
         if (!template) {
             console.error('Template not found:', templateId);
             return;
@@ -93,11 +102,11 @@ export const useStore = create((set, get) => ({
             date: new Date().toISOString().slice(0, 10),
             startTime: Date.now(),
             endTime: null,
-            exercises: template.exercises.map(ex => ({
+            exercises: Array.isArray(template.exercises) ? template.exercises.map(ex => ({
                 exerciseId: ex.exerciseId,
                 loggedSets: [],
                 plannedSets: ex.plannedSets,
-            })),
+            })) : [],
         };
 
         await addWorkoutSessionToDB(newSession);
@@ -121,11 +130,13 @@ export const useStore = create((set, get) => ({
             timestamp: Date.now(),
         };
 
-        const updatedExercises = session.exercises.map(ex =>
-            ex.exerciseId === exerciseId
-                ? { ...ex, loggedSets: [...ex.loggedSets, newSet] }
-                : ex
-        );
+        const exercises = Array.isArray(session.exercises) ? session.exercises : [];
+        const updatedExercises = exercises.map(ex => {
+            const loggedSets = Array.isArray(ex.loggedSets) ? ex.loggedSets : [];
+            return ex.exerciseId === exerciseId
+                ? { ...ex, loggedSets: [...loggedSets, newSet] }
+                : ex;
+        });
 
         const updatedSession = { ...session, exercises: updatedExercises };
         await updateWorkoutSessionInDB(session.id, { exercises: updatedExercises });
@@ -135,10 +146,11 @@ export const useStore = create((set, get) => ({
             get().startRestTimer();
         }
 
-        const allPlannedMainSetsCount = session.exercises.reduce((total, ex) => total + ex.plannedSets, 0);
-        const allLoggedMainSetsCount = updatedSession.exercises.reduce((total, ex) =>
-            total + ex.loggedSets.filter(s => !s.parentSetId).length, 0
-        );
+        const allPlannedMainSetsCount = exercises.reduce((total, ex) => total + (ex.plannedSets || 0), 0);
+        const allLoggedMainSetsCount = updatedExercises.reduce((total, ex) => {
+            const loggedSets = Array.isArray(ex.loggedSets) ? ex.loggedSets : [];
+            return total + loggedSets.filter(s => !s.parentSetId).length;
+        }, 0);
 
         if (allLoggedMainSetsCount >= allPlannedMainSetsCount) {
             get().resetRestTimer();
@@ -151,9 +163,12 @@ export const useStore = create((set, get) => ({
 
         const updatedSession = { ...session, endTime: Date.now() };
         await updateWorkoutSessionInDB(session.id, { endTime: updatedSession.endTime });
+        
+        // Refresh workout history from database to ensure consistency
+        const history = await getAllWorkoutSessionsFromDB();
         set((state) => ({
             currentWorkoutSession: null,
-            workoutHistory: [...state.workoutHistory, updatedSession],
+            workoutHistory: Array.isArray(history) ? history : [],
         }));
 
         get().resetRestTimer();
@@ -162,7 +177,7 @@ export const useStore = create((set, get) => ({
 
     initWorkoutHistory: async () => {
         const history = await getAllWorkoutSessionsFromDB();
-        set({ workoutHistory: history });
+        set({ workoutHistory: Array.isArray(history) ? history : [] });
     },
 
     // --- Rest Timer Actions ---
@@ -174,9 +189,6 @@ export const useStore = create((set, get) => ({
             set((state) => {
                 if (state.restTimerSecondsLeft <= 1) {
                     clearInterval(state.restTimerIntervalId);
-                    if (get().currentWorkoutSession) {
-                        console.log("Rest timer ended!");
-                    }
                     return { restTimerSecondsLeft: 0, isRestTimerActive: false, restTimerIntervalId: null };
                 }
                 return { restTimerSecondsLeft: state.restTimerSecondsLeft - 1 };
@@ -231,5 +243,25 @@ export const useStore = create((set, get) => ({
                 settings: { ...state.settings, ...storedSettings }
             }));
         }
+    },
+
+    clearAll: () => set({
+        workoutTemplates: [],
+        exercises: [],
+        workoutHistory: [],
+        currentWorkoutSession: null,
+        // Add any other state you want to clear
+    }),
+    setWorkoutHistory: (workoutHistory) => set({ workoutHistory: Array.isArray(workoutHistory) ? workoutHistory : [] }),
+    setExercises: (exercises) => set({ exercises: Array.isArray(exercises) ? exercises : [] }),
+    setWorkoutTemplates: (workoutTemplates) => set({ workoutTemplates: Array.isArray(workoutTemplates) ? workoutTemplates : [] }),
+
+    // --- Workout Session Management ---
+    addWorkoutSession: async (session, uid) => {
+        await addWorkoutSessionToDB(session);
+        if (uid) {
+            await addWorkout(uid, session);
+        }
+        // Optionally update local state here if needed
     },
 }));
