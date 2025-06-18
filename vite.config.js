@@ -17,17 +17,32 @@ export default defineConfig({
         name: 'FitNotes',
         short_name: 'FitNotes',
         description: 'Track your fitness journey',
-        theme_color: '#ffffff',
+        theme_color: '#111827',
+        background_color: '#111827',
+        start_url: '/WorkoutTrack/',
+        display: 'standalone',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'icons/icon-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'icons/icon-512x512.png',
             sizes: '512x512',
             type: 'image/png'
+          },
+          {
+            src: 'icons/icon-maskable-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
+          },
+          {
+            src: 'icons/icon-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       }
