@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { EXERCISE_CATEGORIES } from '../utils/exerciseCategories'; // Ensure this is imported
+import ExerciseManager from "./ExerciseManager.jsx"; // Ensure this is imported
 
 export default function WorkoutBuilder() {
     const [templateName, setTemplateName] = useState('');
     const [selectedExercises, setSelectedExercises] = useState([]); // [{exerciseId, name, plannedSets}]
+    const [showExerciseManagerModal, setShowExerciseManagerModal] = useState(false);
 
     // Get exercises and addWorkoutTemplate from the store
     const exercises = useStore((state) => state.exercises);
@@ -35,6 +36,13 @@ export default function WorkoutBuilder() {
     const handleRemoveExercise = (exerciseId) => {
         setSelectedExercises((prev) => prev.filter((ex) => ex.exerciseId !== exerciseId));
     };
+
+    const openExerciseManagerModal = () => {
+        setShowExerciseManagerModal(true);
+    };
+
+    const closeExerciseManagerModal = () => setShowExerciseManagerModal(false);
+
 
     // Function to save the workout template
     const handleSaveWorkoutTemplate = async () => {
@@ -130,6 +138,28 @@ export default function WorkoutBuilder() {
                     ))}
                 </ul>
             </div>
+
+            <div>
+                <button
+                    className="btn btn-info w-full sm:w-auto"
+                    onClick={openExerciseManagerModal}
+                >
+                    Manage Exercises
+                </button>
+            </div>
+            {showExerciseManagerModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
+                    <div className="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl border border-gray-700/50">
+                        <button
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-2xl transition-colors"
+                            onClick={closeExerciseManagerModal}
+                        >
+                            &times;
+                        </button>
+                        <ExerciseManager />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

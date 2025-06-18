@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '../store/useStore.js';
 import { formatTime, playSound, vibrate } from '../utils/timerUtils.js';
+import ExerciseHistory from '../components/ExerciseHistory.jsx'; // Fixed import path
+
 
 export default function WorkoutSessionLogger({ templateId, onClose }) {
     // --- ALL HOOKS MUST BE DECLARED AT THE TOP LEVEL, UNCONDITIONALLY ---
@@ -28,6 +30,20 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
     const [newSubSetWeight, setNewSubSetWeight] = useState('');
     const [newSubSetNotes, setNewSubSetNotes] = useState('');
 
+    // State for Exercise History Modal
+    const [showExerciseHistoryModal, setShowExerciseHistoryModal] = useState(false);
+    const [selectedExerciseForHistory, setSelectedExerciseForHistory] = useState(null);
+
+    // Functions for Exercise History Modal
+    const openExerciseHistoryModal = useCallback((exerciseId) => {
+        setSelectedExerciseForHistory(exerciseId);
+        setShowExerciseHistoryModal(true);
+    }, []);
+
+    const closeExerciseHistoryModal = useCallback(() => {
+        setShowExerciseHistoryModal(false);
+        setSelectedExerciseForHistory(null);
+    }, []);
 
     // Effect to start the session if not already active
     useEffect(() => {
@@ -116,6 +132,11 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
         setNewSubSetWeight('');
         setNewSubSetNotes('');
     }, []);
+
+    // Handler for showing exercise history
+    const handleShowHistory = useCallback((exerciseId) => {
+        openExerciseHistoryModal(exerciseId);
+    }, [openExerciseHistoryModal]);
 
     // Handler for logging the inline sub-set (now triggered by checkbox)
     const handleLogSubSetInline = useCallback(async () => {
@@ -217,15 +238,39 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
 
                     return (
                         <div key={sessionEx.exerciseId} className="bg-gray-700 rounded-lg p-5 border border-gray-600 shadow-md">
-                            <h3 className="text-2xl font-semibold text-indigo-400 mb-3">
-                                {sessionEx.name} <span className="text-base text-gray-400">({sessionEx.category})</span>
-                                {/* Rest Timer Display - now under exercise name and conditional */}
-                                {isRestTimerActive && ( // Only show if rest timer is active
-                                    <span className="ml-4 bg-yellow-600 text-white text-sm px-2 py-1 rounded-full">
-                    Rest: {formatTime(restTimerSecondsLeft)}
-                  </span>
-                                )}
-                            </h3>
+                            <div className="flex justify-between items-start mb-3">
+                                <h3 className="text-2xl font-semibold text-indigo-400">
+                                    {sessionEx.name} <span className="text-base text-gray-400">({sessionEx.category})</span>
+                                    {/* Rest Timer Display - now under exercise name and conditional */}
+                                    {isRestTimerActive && ( // Only show if rest timer is active
+                                        <span className="ml-4 bg-yellow-600 text-white text-sm px-2 py-1 rounded-full">
+                        Rest: {formatTime(restTimerSecondsLeft)}
+                      </span>
+                                    )}
+                                </h3>
+                                
+                                {/* History Button - moved to exercise level */}
+                                <button
+                                    className="flex-shrink-0 p-2 hover:bg-gray-600 rounded transition-colors duration-200"
+                                    onClick={() => handleShowHistory(sessionEx.exerciseId)}
+                                    title="View exercise history"
+                                >
+                                    <svg
+                                        className="w-5 h-5 opacity-70 hover:opacity-100 transition-opacity duration-200 text-gray-400"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
 
                             <h4 className="text-lg font-medium text-gray-100 mb-3">
                                 Planned Sets: {sessionEx.plannedSets}
@@ -240,61 +285,62 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                                     return (
                                         <React.Fragment key={plannedSetIdx}>
                                             <li className="bg-gray-800 p-4 rounded-md shadow-sm border border-gray-700">
-                                                <div className="flex flex-wrap items-center gap-3">
+                                                {/* Main row with all inputs - mobile optimized */}
+                                                <div className="flex items-center gap-2 mb-2">
                                                     {/* Checkbox / Completion Indicator */}
                                                     {isLogged ? (
-                                                        <span className="text-green-500 font-bold text-xl flex-shrink-0">&#10003;</span> // Checkmark
+                                                        <span className="text-green-500 font-bold text-lg flex-shrink-0 w-5">&#10003;</span> // Checkmark
                                                     ) : (
                                                         <input
                                                             type="checkbox"
-                                                            className="form-checkbox h-5 w-5 text-indigo-500 flex-shrink-0 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500"
+                                                            className="form-checkbox h-4 w-4 text-indigo-500 flex-shrink-0 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500"
                                                             checked={false} // This input only triggers logging
                                                             onChange={() => handleSetCompletion(sessionEx.exerciseId, plannedSetIdx)}
                                                             disabled={!isNextSetToLog} // Only enable for the next set to log
                                                         />
                                                     )}
 
-                                                    {/* Set Labels */}
-                                                    <span className="font-semibold text-white mr-2">Set {plannedSetIdx + 1}</span>
+                                                    {/* Set Label - more compact */}
+                                                    <span className="font-semibold text-white text-sm min-w-0 flex-shrink-0">Set {plannedSetIdx + 1}</span>
 
-                                                    {/* Reps Input */}
+                                                    {/* Reps Input - smaller */}
                                                     <input
                                                         type="number"
                                                         placeholder="Reps"
-                                                        className="input w-24 bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50"
+                                                        className="input w-16 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
                                                         value={inputs.reps}
                                                         onChange={(e) => handleInputChange(sessionEx.exerciseId, plannedSetIdx, 'reps', e.target.value)}
                                                         disabled={isLogged || !isNextSetToLog}
                                                     />
 
-                                                    {/* Weight Input */}
+                                                    {/* Weight Input - smaller */}
                                                     <input
                                                         type="number"
                                                         placeholder="Weight"
-                                                        className="input w-28 bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50"
+                                                        className="input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
                                                         value={inputs.weight}
                                                         onChange={(e) => handleInputChange(sessionEx.exerciseId, plannedSetIdx, 'weight', e.target.value)}
                                                         disabled={isLogged || !isNextSetToLog}
                                                     />
 
-                                                    {/* Notes Input */}
+                                                    {/* Notes Input - fixed width instead of flex-grow */}
                                                     <input
                                                         type="text"
-                                                        placeholder="Notes (optional)"
-                                                        className="input flex-grow bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50"
+                                                        placeholder="Notes"
+                                                        className="input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
                                                         value={inputs.notes}
                                                         onChange={(e) => handleInputChange(sessionEx.exerciseId, plannedSetIdx, 'notes', e.target.value)}
                                                         disabled={isLogged || !isNextSetToLog}
                                                     />
-
-                                                    {/* Logged set details - only visible if logged */}
-                                                    {isLogged && (
-                                                        <div className="text-gray-400 text-sm italic ml-auto">
-                                                            Logged: {currentLoggedSet.reps} reps @ {currentLoggedSet.weight} kg
-                                                            {currentLoggedSet.notes && ` (${currentLoggedSet.notes})`}
-                                                        </div>
-                                                    )}
                                                 </div>
+
+                                                {/* Logged set details - now on separate line for better mobile layout */}
+                                                {isLogged && (
+                                                    <div className="text-gray-400 text-sm italic mt-2 pl-6">
+                                                        Logged: {currentLoggedSet.reps} reps @ {currentLoggedSet.weight} kg
+                                                        {currentLoggedSet.notes && ` (${currentLoggedSet.notes})`}
+                                                    </div>
+                                                )}
 
                                                 {/* Display Logged Sub-Sets (if any) */}
                                                 {currentLoggedSet && currentLoggedSet.subSets && currentLoggedSet.subSets.length > 0 && (
@@ -322,45 +368,47 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                                                         </button>
                                                     )}
 
-                                                {/* Inline Sub-Set Input Form */}
+                                                {/* Inline Sub-Set Input Form - mobile optimized */}
                                                 {addingSubSetFor && addingSubSetFor.parentSetId === currentLoggedSet?.id && (
                                                     <div className="mt-4 p-4 bg-gray-700 rounded-md border border-gray-600">
                                                         <h5 className="font-semibold text-white mb-2">Add Sub-Set to {currentLoggedSet.label}</h5>
-                                                        <div className="flex flex-wrap items-center gap-3 mb-3">
+                                                        <div className="flex items-center gap-2 mb-3">
                                                             <input
                                                                 type="number"
                                                                 placeholder="Reps"
-                                                                className="input w-24 bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50"
+                                                                className="input w-16 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
                                                                 value={newSubSetReps}
                                                                 onChange={(e) => setNewSubSetReps(e.target.value)}
                                                             />
                                                             <input
                                                                 type="number"
                                                                 placeholder="Weight"
-                                                                className="input w-28 bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50"
+                                                                className="input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
                                                                 value={newSubSetWeight}
                                                                 onChange={(e) => setNewSubSetWeight(e.target.value)}
                                                             />
                                                             <input
                                                                 type="text"
-                                                                placeholder="Notes (optional)"
-                                                                className="input flex-grow bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50"
+                                                                placeholder="Notes"
+                                                                className="input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
                                                                 value={newSubSetNotes}
                                                                 onChange={(e) => setNewSubSetNotes(e.target.value)}
                                                             />
                                                         </div>
-                                                        <button
-                                                            className="btn btn-primary px-4 py-2 text-sm"
-                                                            onClick={handleLogSubSetInline}
-                                                        >
-                                                            Log Sub-Set
-                                                        </button>
-                                                        <button
-                                                            className="btn btn-secondary ml-2 px-4 py-2 text-sm"
-                                                            onClick={() => setAddingSubSetFor(null)}
-                                                        >
-                                                            Cancel
-                                                        </button>
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                className="btn btn-primary px-4 py-2 text-sm"
+                                                                onClick={handleLogSubSetInline}
+                                                            >
+                                                                Log Sub-Set
+                                                            </button>
+                                                            <button
+                                                                className="btn btn-secondary px-4 py-2 text-sm"
+                                                                onClick={() => setAddingSubSetFor(null)}
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </li>
@@ -372,6 +420,23 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                     );
                 })}
             </div>
+
+            {/* Exercise History Modal - moved to root level */}
+            {showExerciseHistoryModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
+                    <div className="bg-gray-800 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl border border-gray-700/50">
+                        <button
+                            className="absolute top-3 right-3 text-gray-400 hover:text-gray-200 text-2xl transition-colors"
+                            onClick={closeExerciseHistoryModal}
+                        >
+                            &times;
+                        </button>
+                        <ExerciseHistory
+                            exerciseId={selectedExerciseForHistory}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

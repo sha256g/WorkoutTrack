@@ -99,12 +99,12 @@ export default function WorkoutTemplatesPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <h2 className="text-2xl font-bold text-white">Your Workout Templates</h2>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <button
-                        className="btn btn-success w-full sm:w-auto"
-                        onClick={openBuilderModal}
-                    >
-                        Create New Template
-                    </button>
+                    {/*<button*/}
+                    {/*    className="btn btn-success w-full sm:w-auto"*/}
+                    {/*    onClick={openBuilderModal}*/}
+                    {/*>*/}
+                    {/*    Create New Template*/}
+                    {/*</button>*/}
                     <button
                         className="btn btn-primary w-full sm:w-auto"
                         onClick={handleViewHistory}
