@@ -5,13 +5,13 @@ import { getFirestore } from 'firebase/firestore';
 // Replace the config object below with your actual Firebase project config
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCGd8HJq-kmJ-droAWLb8LTe3B234pB7Xo",
-  authDomain: "project---workouttracker.firebaseapp.com",
-  projectId: "project---workouttracker",
-  storageBucket: "project---workouttracker.appspot.com",
-  messagingSenderId: "660111544538",
-  appId: "1:660111544538:web:f0fd512ec5b5ce520195e3",
-  measurementId: "G-JJBGKND974"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
