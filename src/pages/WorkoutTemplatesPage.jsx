@@ -97,14 +97,8 @@ export default function WorkoutTemplatesPage({ user }) {
     return (
         <div className="bg-transparent w-full p-4 md:p-6 lg:p-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <h2 className="text-2xl font-bold text-white">Your Workout Templates</h2>
+                <h2 className="text-2xl font-bold text-white">Your Workouts</h2>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    {/*<button*/}
-                    {/*    className="btn btn-success w-full sm:w-auto"*/}
-                    {/*    onClick={openBuilderModal}*/}
-                    {/*>*/}
-                    {/*    Create New Template*/}
-                    {/*</button>*/}
                     <button
                         className="btn btn-primary w-full sm:w-auto"
                         onClick={handleViewHistory}
@@ -127,7 +121,7 @@ export default function WorkoutTemplatesPage({ user }) {
             </div>
 
             {workoutTemplates.length === 0 ? (
-                <p className="text-gray-400 text-center py-10">No workout templates created yet. Click the '+' button to build one!</p>
+                <p className="text-gray-400 text-center py-10">No workouts created yet. Click the '+' button to build one!</p>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {workoutTemplates.map((template) => (

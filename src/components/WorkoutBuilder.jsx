@@ -14,7 +14,7 @@ export default function WorkoutBuilder({ user }) {
     // Function to add an exercise to the workout template
     const handleAddExerciseToTemplate = (exercise) => {
         if (selectedExercises.some((ex) => ex.exerciseId === exercise.id)) {
-            alert('Exercise already added to this workout template!');
+            alert('Exercise already added to this workout!');
             return;
         }
         setSelectedExercises([
@@ -47,7 +47,7 @@ export default function WorkoutBuilder({ user }) {
     // Function to save the workout template
     const handleSaveWorkoutTemplate = async () => {
         if (!templateName || selectedExercises.length === 0) {
-            alert('Please enter a template name and add at least one exercise.');
+            alert('Please enter a workout name and add exercises.');
             return;
         }
 
@@ -64,12 +64,12 @@ export default function WorkoutBuilder({ user }) {
         await addWorkoutTemplate(newTemplate, user?.uid);
         setTemplateName('');
         setSelectedExercises([]);
-        alert('Workout template saved!');
+        alert('Workout saved!');
     };
 
     return (
         <div className="p-4 border rounded mb-4 bg-gray-50">
-            <h2 className="text-2xl font-bold mb-4 text-blue-800">Build New Workout Template</h2>
+            <h2 className="text-2xl font-bold mb-4 text-blue-800">Build New Workout</h2>
 
             {/* Template Name and Save */}
             <div className="mb-4 flex flex-col sm:flex-row gap-3 items-center">
@@ -77,7 +77,7 @@ export default function WorkoutBuilder({ user }) {
                     className="border p-2 rounded w-full sm:w-1/2"
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
-                    placeholder="Workout Template Name (e.g., Push Day)"
+                    placeholder="Workout Name"
                     required
                 />
                 <button
@@ -85,7 +85,7 @@ export default function WorkoutBuilder({ user }) {
                     onClick={handleSaveWorkoutTemplate}
                     type="button"
                 >
-                    Save Workout Template
+                    Save Workout
                 </button>
             </div>
 
@@ -107,10 +107,20 @@ export default function WorkoutBuilder({ user }) {
                 </div>
             </div>
 
+            {/*exercise manager button*/}
+            <div className="mb-4">
+                <button
+                    className="btn btn-info w-full sm:w-auto"
+                    onClick={openExerciseManagerModal}
+                >
+                    Manage Exercises
+                </button>
+            </div>
+
             {/* Selected Exercises in Template */}
             <div>
-                <h3 className="text-xl font-semibold mb-3 text-gray-700">Exercises in this Template ({selectedExercises.length})</h3>
-                {selectedExercises.length === 0 && <p className="text-gray-500">No exercises added to template yet.</p>}
+                <h3 className="text-xl font-semibold mb-3 text-gray-700">Exercises in this workout ({selectedExercises.length})</h3>
+                {selectedExercises.length === 0 && <p className="text-gray-500">No exercises added to the workout yet.</p>}
                 <ul className="space-y-4">
                     {selectedExercises.map((ex) => (
                         <li key={ex.exerciseId} className="flex flex-col sm:flex-row items-start sm:items-center bg-white p-3 rounded-lg shadow-sm gap-3">
@@ -138,14 +148,7 @@ export default function WorkoutBuilder({ user }) {
                 </ul>
             </div>
 
-            <div>
-                <button
-                    className="btn btn-info w-full sm:w-auto"
-                    onClick={openExerciseManagerModal}
-                >
-                    Manage Exercises
-                </button>
-            </div>
+
             {showExerciseManagerModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
                     <div className="bg-gray-800 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative shadow-2xl border border-gray-700/50">
