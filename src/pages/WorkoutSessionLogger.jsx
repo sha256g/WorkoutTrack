@@ -307,15 +307,17 @@ export default function WorkoutSessionLogger({ templateId, onClose, user }) {
                     return (
                         <div key={sessionEx.exerciseId} className="bg-gray-700 rounded-lg p-5 border border-gray-600 shadow-md">
                             <div className="flex justify-between items-start mb-3">
-                                <h3 className="text-2xl font-semibold text-indigo-400">
-                                    {sessionEx.name} <span className="text-base text-gray-400">({sessionEx.category})</span>
-                                    {/* Rest Timer Display - now under exercise name and conditional */}
-                                    {isRestTimerActive && ( // Only show if rest timer is active
-                                        <span className="ml-4 bg-yellow-600 text-white text-sm px-2 py-1 rounded-full">
-                        Rest: {formatTime(restTimerSecondsLeft)}
-                      </span>
+                                {/* Exercise Name and Rest Timer */}
+                                <div className="mb-1">
+                                    <h3 className="text-2xl font-semibold text-indigo-400">
+                                        {sessionEx.name} <span className="text-base text-gray-400">({sessionEx.category})</span>
+                                    </h3>
+                                    {isRestTimerActive && (
+                                        <div className="mt-1 inline-block bg-yellow-600 text-white text-sm px-3 py-1 rounded-full whitespace-nowrap">
+                                            Rest: {formatTime(restTimerSecondsLeft)}
+                                        </div>
                                     )}
-                                </h3>
+                                </div>
                                 
                                 {/* History Button - moved to exercise level */}
                                 <button
