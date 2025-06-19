@@ -47,7 +47,11 @@ export async function getAllWorkouts(uid) {
 // Update a workout
 export async function updateWorkout(uid, id, data) {
   try {
-    const docRef = doc(firestore, 'users', uid, 'workouts', id);
+    console.log('updateWorkout called with:', { uid, id, data });
+    console.log('data.exercises:', data.exercises);
+    console.log('Array.isArray(data.exercises):', Array.isArray(data.exercises));
+    
+    const docRef = doc(firestore, 'users', uid, 'workouts', String(id));
     
     // Sanitize data for Firebase - ensure exercises array is properly formatted
     const sanitizedData = {
@@ -55,20 +59,28 @@ export async function updateWorkout(uid, id, data) {
       date: data.date || new Date().toISOString().slice(0, 10),
       startTime: data.startTime || Date.now(),
       endTime: data.endTime || null,
-      exercises: Array.isArray(data.exercises) ? data.exercises.map(ex => ({
-        exerciseId: ex.exerciseId || 0,
-        plannedSets: ex.plannedSets || 0,
-        loggedSets: Array.isArray(ex.loggedSets) ? ex.loggedSets.map(set => ({
-          id: set.id || Date.now(),
-          reps: set.reps || 0,
-          weight: set.weight || 0,
-          notes: set.notes || '',
-          parentSetId: set.parentSetId || null,
-          timestamp: set.timestamp || Date.now(),
-        })) : [],
-      })) : [],
+      exercises: Array.isArray(data.exercises) ? data.exercises.map(ex => {
+        console.log('Processing exercise:', ex);
+        console.log('ex.loggedSets:', ex.loggedSets);
+        console.log('Array.isArray(ex.loggedSets):', Array.isArray(ex.loggedSets));
+        
+        return {
+          exerciseId: ex.exerciseId || 0,
+          plannedSets: ex.plannedSets || 0,
+          loggedSets: Array.isArray(ex.loggedSets) ? ex.loggedSets.map(set => ({
+            id: set.id || Date.now(),
+            reps: set.reps || 0,
+            weight: set.weight || 0,
+            notes: set.notes || '',
+            parentSetId: set.parentSetId || null,
+            timestamp: set.timestamp || Date.now(),
+          })) : [],
+        };
+      }) : [],
       updatedAt: new Date().toISOString(),
     };
+    
+    console.log('sanitizedData:', sanitizedData);
     
     // Use setDoc with merge option instead of updateDoc to handle non-existent documents
     await setDoc(docRef, sanitizedData, { merge: true });

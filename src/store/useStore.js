@@ -18,7 +18,8 @@ import {
 } from '../db/dexieDB';
 import { addExercise } from '../services/firestoreExercises';
 import { addTemplate } from '../services/firestoreTemplates';
-import { addWorkout } from '../services/firestoreWorkouts';
+import { addWorkout, syncWorkoutsFromCloud } from '../services/firestoreWorkouts';
+import { updateWorkout } from '../services/firestoreWorkouts';
 
 const DEFAULT_REST_TIME_SECONDS = 60;
 
@@ -86,7 +87,28 @@ export const useStore = create((set, get) => ({
     },
 
     // --- Workout Session Management ---
-    startWorkoutSession: async (templateId) => {
+    getMostRecentWorkoutSession: async (templateId) => {
+        // Use the store's workoutHistory state instead of reading from Dexie
+        const history = get().workoutHistory || [];
+        
+        // Only consider sessions with at least one main set logged (not just subsets)
+        const templateSessions = Array.isArray(history) 
+            ? history.filter(session => {
+                if (String(session.templateId) !== String(templateId) || !session.endTime) return false;
+                // Check if at least one exercise has a main set (parentSetId === null)
+                return Array.isArray(session.exercises) && session.exercises.some(ex =>
+                    Array.isArray(ex.loggedSets) && ex.loggedSets.some(set => !set.parentSetId)
+                );
+            })
+            : [];
+        
+        if (templateSessions.length === 0) return null;
+        
+        // Sort by endTime descending and get the most recent
+        return templateSessions.sort((a, b) => b.endTime - a.endTime)[0];
+    },
+
+    startWorkoutSession: async (templateId, user = null) => {
         const template = Array.isArray(get().workoutTemplates) ? get().workoutTemplates.find(t => t.id === templateId) : null;
         if (!template) {
             console.error('Template not found:', templateId);
@@ -96,8 +118,10 @@ export const useStore = create((set, get) => ({
         get().resetRestTimer();
         get().stopSessionTimer();
 
+        // Get the most recent completed workout session for this template
+        const previousSession = await get().getMostRecentWorkoutSession(templateId);
+
         const newSession = {
-            id: Date.now(),
             templateId,
             date: new Date().toISOString().slice(0, 10),
             startTime: Date.now(),
@@ -109,12 +133,26 @@ export const useStore = create((set, get) => ({
             })) : [],
         };
 
-        await addWorkoutSessionToDB(newSession);
-        set({ currentWorkoutSession: newSession });
+        const sessionId = await addWorkoutSessionToDB(newSession);
+        const sessionWithId = { ...newSession, id: sessionId };
+        
+        // Also sync to Firebase if user is provided
+        if (user) {
+            try {
+                await addWorkout(user.uid, sessionWithId);
+            } catch (error) {
+                console.error('Error syncing workout session to Firebase:', error);
+            }
+        }
+        
+        set({ currentWorkoutSession: sessionWithId });
         get().startSessionTimer();
+
+        // Return previous session data for pre-population
+        return previousSession;
     },
 
-    logSet: async (exerciseId, reps, weight, notes, parentSetId = null) => {
+    logSet: async (exerciseId, reps, weight, notes, parentSetId = null, user = null, isPersonalBest = false) => {
         const session = get().currentWorkoutSession;
         if (!session) {
             console.error('No active workout session to log set to.');
@@ -128,6 +166,7 @@ export const useStore = create((set, get) => ({
             notes: notes,
             parentSetId: parentSetId,
             timestamp: Date.now(),
+            isPersonalBest: !!isPersonalBest,
         };
 
         const exercises = Array.isArray(session.exercises) ? session.exercises : [];
@@ -140,6 +179,16 @@ export const useStore = create((set, get) => ({
 
         const updatedSession = { ...session, exercises: updatedExercises };
         await updateWorkoutSessionInDB(session.id, { exercises: updatedExercises });
+        
+        // Also sync to Firebase if user is provided
+        if (user) {
+            try {
+                await updateWorkout(user.uid, session.id, updatedSession);
+            } catch (error) {
+                console.error('Error syncing set to Firebase:', error);
+            }
+        }
+        
         set({ currentWorkoutSession: updatedSession });
 
         if (parentSetId === null) {
@@ -157,20 +206,38 @@ export const useStore = create((set, get) => ({
         }
     },
 
-    endWorkoutSession: async () => {
+    endWorkoutSession: async (user = null) => {
         const session = get().currentWorkoutSession;
         if (!session) return;
 
         const updatedSession = { ...session, endTime: Date.now() };
         await updateWorkoutSessionInDB(session.id, { endTime: updatedSession.endTime });
         
-        // Refresh workout history from database to ensure consistency
-        const history = await getAllWorkoutSessionsFromDB();
-        set((state) => ({
-            currentWorkoutSession: null,
-            workoutHistory: Array.isArray(history) ? history : [],
-        }));
+        // Also sync to Firebase if user is provided
+        if (user) {
+            try {
+                await updateWorkout(user.uid, session.id, updatedSession);
+            } catch (error) {
+                console.error('Error syncing workout end to Firebase:', error);
+            }
+            // Re-sync from Firebase to get the latest history
+            try {
+                await syncWorkoutsFromCloud(user.uid, (data) => {
+                    set({ workoutHistory: Array.isArray(data) ? data : [] });
+                });
+            } catch (error) {
+                console.error('Error syncing workouts from Firebase after ending session:', error);
+            }
+        } else {
+            // Refresh workout history from database to ensure consistency
+            const history = await getAllWorkoutSessionsFromDB();
+            set((state) => ({
+                currentWorkoutSession: null,
+                workoutHistory: Array.isArray(history) ? history : [],
+            }));
+        }
 
+        set({ currentWorkoutSession: null });
         get().resetRestTimer();
         get().stopSessionTimer();
     },

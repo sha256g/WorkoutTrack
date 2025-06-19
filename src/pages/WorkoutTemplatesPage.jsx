@@ -78,6 +78,7 @@ export default function WorkoutTemplatesPage({ user }) {
             <WorkoutSessionLogger
                 templateId={activeSessionTemplateId}
                 onClose={endSessionAndCloseLogger}
+                user={user}
             />
         );
     }

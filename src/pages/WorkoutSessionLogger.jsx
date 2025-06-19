@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useStore } from '../store/useStore.js';
 import { formatTime, playSound, vibrate } from '../utils/timerUtils.js';
 import ExerciseHistory from '../components/ExerciseHistory.jsx'; // Fixed import path
+import { addWorkout, updateWorkout } from '../services/firestoreWorkouts.js';
 
+// At the top, import a confetti library (or add a placeholder for now)
+// import Confetti from 'react-confetti'; // Uncomment if using a library
 
-export default function WorkoutSessionLogger({ templateId, onClose }) {
+export default function WorkoutSessionLogger({ templateId, onClose, user }) {
     // --- ALL HOOKS MUST BE DECLARED AT THE TOP LEVEL, UNCONDITIONALLY ---
     const currentWorkoutSession = useStore((state) => state.currentWorkoutSession);
     const workoutTemplates = useStore((state) => state.workoutTemplates);
@@ -34,6 +37,9 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
     const [showExerciseHistoryModal, setShowExerciseHistoryModal] = useState(false);
     const [selectedExerciseForHistory, setSelectedExerciseForHistory] = useState(null);
 
+    // Store previous session for personal best comparison
+    const [previousSession, setPreviousSession] = useState(null);
+
     // Functions for Exercise History Modal
     const openExerciseHistoryModal = useCallback((exerciseId) => {
         setSelectedExerciseForHistory(exerciseId);
@@ -45,12 +51,52 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
         setSelectedExerciseForHistory(null);
     }, []);
 
+    // Helper function to pre-populate inputs with previous workout data
+    const prePopulateInputs = useCallback((previousSession) => {
+        if (!previousSession || !previousSession.exercises) {
+            return;
+        }
+
+        const prePopulatedInputs = {};
+
+        previousSession.exercises.forEach(prevExercise => {
+            const loggedSets = Array.isArray(prevExercise.loggedSets) ? prevExercise.loggedSets : [];
+            // Only include main sets (no subsets) and sort by timestamp
+            const mainSets = loggedSets.filter(set => !set.parentSetId).sort((a, b) => a.timestamp - b.timestamp);
+            
+            if (mainSets.length > 0) {
+                prePopulatedInputs[prevExercise.exerciseId] = {};
+                
+                // Only pre-populate sets that were actually completed
+                // For each completed set, use its actual data
+                mainSets.forEach((set, index) => {
+                    prePopulatedInputs[prevExercise.exerciseId][index] = {
+                        reps: set.reps.toString(),
+                        weight: set.weight.toString(),
+                        notes: set.notes || ''
+                    };
+                });
+                
+                // Leave remaining planned sets empty (no pre-population)
+            }
+        });
+
+        setTempPlannedSetInputs(prePopulatedInputs);
+    }, []);
+
     // Effect to start the session if not already active
     useEffect(() => {
         if (!currentWorkoutSession || currentWorkoutSession.templateId !== templateId) {
-            startWorkoutSession(templateId);
+            const initializeSession = async () => {
+                const previousSession = await startWorkoutSession(templateId, user);
+                
+                if (previousSession) {
+                    prePopulateInputs(previousSession);
+                }
+            };
+            initializeSession();
         }
-    }, [templateId, currentWorkoutSession, startWorkoutSession]);
+    }, [templateId, currentWorkoutSession, startWorkoutSession, prePopulateInputs, user]);
 
     // Effect for Workout Session Timer: updates local state every second for display
     useEffect(() => {
@@ -86,6 +132,26 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
         }
     }, [restTimerSecondsLeft, isRestTimerActive, currentWorkoutSession]);
 
+    // Fetch previous session on mount
+    useEffect(() => {
+        const fetchPrev = async () => {
+            const prev = await useStore.getState().getMostRecentWorkoutSession(templateId);
+            setPreviousSession(prev);
+        };
+        fetchPrev();
+    }, [templateId]);
+
+    // Helper to check if this set is a personal best
+    const isPersonalBest = useCallback((exerciseId, plannedSetIdx, reps, weight) => {
+        if (!previousSession || !previousSession.exercises) return false;
+        const prevEx = previousSession.exercises.find(ex => String(ex.exerciseId) === String(exerciseId));
+        if (!prevEx || !Array.isArray(prevEx.loggedSets)) return false;
+        // Only consider main sets (parentSetId === null)
+        const prevMainSets = prevEx.loggedSets.filter(set => !set.parentSetId).sort((a, b) => a.timestamp - b.timestamp);
+        const prevSet = prevMainSets[plannedSetIdx];
+        if (!prevSet) return true; // If no previous set, treat as PB
+        return Number(reps) > Number(prevSet.reps) || Number(weight) > Number(prevSet.weight);
+    }, [previousSession]);
 
     // Handle input changes for the temporary planned set inputs
     const handleInputChange = useCallback((exerciseId, plannedSetIdx, field, value) => {
@@ -113,8 +179,11 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
             return;
         }
 
+        // Check for personal best
+        const pb = isPersonalBest(exerciseId, plannedSetIdx, reps, weight);
+
         // Log the main set (parentSetId = null) - this will trigger rest timer in store
-        await logSet(exerciseId, reps, weight, notes, null);
+        await logSet(exerciseId, reps, weight, notes, null, user, pb);
 
         // After logging, clear the inputs for this specific planned set from temp state
         setTempPlannedSetInputs(prev => {
@@ -123,7 +192,7 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
             return { ...prev, [exerciseId]: newExInputs };
         });
 
-    }, [tempPlannedSetInputs, logSet]);
+    }, [tempPlannedSetInputs, logSet, user, isPersonalBest]);
 
     // Handler for opening the inline sub-set form
     const handleStartAddSubSet = useCallback((exerciseId, parentSetId) => {
@@ -153,7 +222,7 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
         }
 
         // Log the sub-set - this will trigger rest timer in store
-        await logSet(exerciseId, reps, weight, notes, parentSetId);
+        await logSet(exerciseId, reps, weight, notes, parentSetId, user);
 
         // Clear sub-set input state and close the inline form
         setAddingSubSetFor(null);
@@ -161,7 +230,7 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
         setNewSubSetWeight('');
         setNewSubSetNotes('');
 
-    }, [addingSubSetFor, newSubSetReps, newSubSetWeight, newSubSetNotes, logSet]);
+    }, [addingSubSetFor, newSubSetReps, newSubSetWeight, newSubSetNotes, logSet, user]);
 
     // Helper to get formatted logged sets, including sub-sets correctly grouped and labeled
     const getGroupedLoggedSets = useCallback((sessionEx) => {
@@ -186,7 +255,6 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
         });
         return grouped;
     }, []);
-
 
     // --- CONDITIONAL RENDERING STARTS AFTER ALL HOOKS ---
 
@@ -219,7 +287,7 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                 <button
                     className="btn btn-secondary bg-red-600 hover:bg-red-700 shadow-red-500/20 border-red-500/20"
                     onClick={() => {
-                        endWorkoutSession();
+                        endWorkoutSession(user);
                         onClose(); // Close the modal/component after ending session
                     }}
                 >
@@ -289,7 +357,11 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                                                 <div className="flex items-center gap-2 mb-2">
                                                     {/* Checkbox / Completion Indicator */}
                                                     {isLogged ? (
-                                                        <span className="text-green-500 font-bold text-lg flex-shrink-0 w-5">&#10003;</span> // Checkmark
+                                                        currentLoggedSet?.isPersonalBest ? (
+                                                            <span className="text-yellow-400 font-bold text-lg flex-shrink-0 w-5" title="Personal Best!">&#11088;</span> // Gold star
+                                                        ) : (
+                                                            <span className="text-green-500 font-bold text-lg flex-shrink-0 w-5">&#10003;</span>
+                                                        )
                                                     ) : (
                                                         <input
                                                             type="checkbox"
@@ -307,7 +379,9 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                                                     <input
                                                         type="number"
                                                         placeholder="Reps"
-                                                        className="input w-16 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
+                                                        className={`input w-16 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2 ${
+                                                            inputs.reps ? 'border-blue-400 bg-blue-600/20' : ''
+                                                        }`}
                                                         value={inputs.reps}
                                                         onChange={(e) => handleInputChange(sessionEx.exerciseId, plannedSetIdx, 'reps', e.target.value)}
                                                         disabled={isLogged || !isNextSetToLog}
@@ -317,7 +391,9 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                                                     <input
                                                         type="number"
                                                         placeholder="Weight"
-                                                        className="input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
+                                                        className={`input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2 ${
+                                                            inputs.weight ? 'border-blue-400 bg-blue-600/20' : ''
+                                                        }`}
                                                         value={inputs.weight}
                                                         onChange={(e) => handleInputChange(sessionEx.exerciseId, plannedSetIdx, 'weight', e.target.value)}
                                                         disabled={isLogged || !isNextSetToLog}
@@ -327,7 +403,9 @@ export default function WorkoutSessionLogger({ templateId, onClose }) {
                                                     <input
                                                         type="text"
                                                         placeholder="Notes"
-                                                        className="input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2"
+                                                        className={`input w-20 h-8 text-sm bg-gray-600 border-gray-500 text-gray-100 placeholder-gray-400 focus:ring-blue-500/50 px-2 ${
+                                                            inputs.notes ? 'border-blue-400 bg-blue-600/20' : ''
+                                                        }`}
                                                         value={inputs.notes}
                                                         onChange={(e) => handleInputChange(sessionEx.exerciseId, plannedSetIdx, 'notes', e.target.value)}
                                                         disabled={isLogged || !isNextSetToLog}
